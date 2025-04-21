@@ -1,8 +1,210 @@
 // Importiamo gli hook necessari da React e i componenti di react-bootstrap
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Spinner, Alert } from 'react-bootstrap';
+import { motion, AnimatePresence, useAnimationControls } from 'framer-motion';
 // Importiamo il file CSS per gli stili
 import './NextDays.css';
+
+// Varianti per le animazioni
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
+
+// Componente CloudAnimation per le animazioni delle nuvole
+const CloudAnimation = () => {
+  // Creiamo 5 nuvole con posizioni e dimensioni casuali
+  const clouds = useMemo(() => {
+    return Array.from({ length: 5 }).map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 80}%`,
+      size: Math.random() * 15 + 10,
+      delay: Math.random() * 3,
+      duration: Math.random() * 5 + 10
+    }));
+  }, []);
+
+  return (
+    <motion.div className="cloud-animation-container">
+      {clouds.map((cloud) => (
+        <motion.div
+          key={cloud.id}
+          className="cloud"
+          style={{
+            top: cloud.top,
+            width: `${cloud.size}px`,
+            height: `${cloud.size}px`,
+          }}
+          initial={{ x: '-150%' }}
+          animate={{ x: '150%' }}
+          transition={{
+            duration: cloud.duration,
+            delay: cloud.delay,
+            repeat: Infinity,
+            repeatType: 'loop',
+            ease: 'linear'
+          }}
+        />
+      ))}
+    </motion.div>
+  );
+};
+
+// Componente RainAnimation per le animazioni della pioggia
+const RainAnimation = () => {
+  // Creiamo gocce di pioggia con posizioni e tempi casuali
+  const raindrops = useMemo(() => {
+    return Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      delay: Math.random() * 2,
+      duration: Math.random() * 0.5 + 0.7
+    }));
+  }, []);
+
+  return (
+    <motion.div className="rain-animation-container">
+      {raindrops.map((drop) => (
+        <motion.div
+          key={drop.id}
+          className="raindrop"
+          style={{
+            left: drop.left,
+          }}
+          initial={{ y: '-50%', opacity: 0 }}
+          animate={{ y: '150%', opacity: [0, 1, 1, 0] }}
+          transition={{
+            duration: drop.duration,
+            delay: drop.delay,
+            repeat: Infinity,
+            repeatType: 'loop',
+            ease: 'linear',
+            times: [0, 0.1, 0.9, 1]
+          }}
+        />
+      ))}
+    </motion.div>
+  );
+};
+
+// Funzione helper per determinare il tipo di meteo in base all'icona
+const getWeatherType = (iconCode) => {
+  // Controlla se è nuvoloso: 03d, 03n, 04d, 04n
+  if (['03d', '03n', '04d', '04n'].includes(iconCode)) {
+    return 'cloudy';
+  }
+  // Controlla se è piovoso: 09d, 09n, 10d, 10n, 11d, 11n
+  if (['09d', '09n', '10d', '10n', '11d', '11n'].includes(iconCode)) {
+    return 'rainy';
+  }
+  // Altrimenti, nessuna animazione speciale
+  return 'other';
+};
+
+// Componente WeatherCard con animazioni specifiche per il meteo
+const WeatherCard = ({ hour, index }) => {
+  const weatherType = getWeatherType(hour.weather[0].icon);
+  
+  return (
+    <motion.div
+      key={index}
+      className="forecast-card d-flex flex-column justify-content-between"
+      variants={itemVariants}
+      whileHover={{ 
+        y: -10, 
+        boxShadow: "0px 10px 20px rgba(0,0,0,0.2)",
+        scale: 1.03
+      }}
+      transition={{ 
+        type: "spring", 
+        stiffness: 300,
+        damping: 15
+      }}
+      custom={index}
+    >
+      {/* Animazioni per il tipo di meteo */}
+      {weatherType === 'cloudy' && <CloudAnimation />}
+      {weatherType === 'rainy' && <RainAnimation />}
+      
+      <div className="d-flex flex-column align-items-center">
+        {/* Mostriamo l'ora */}
+        <motion.p 
+          className="hour mb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 + index * 0.1 }}
+        >
+          {new Date(hour.dt * 1000).toLocaleTimeString('it-IT', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })}
+        </motion.p>
+        {/* Mostriamo l'icona del meteo */}
+        <motion.div 
+          className="weather-icon-container mb-1"
+          animate={{ 
+            rotate: weatherType === 'other' ? [0, 10, 0, -10, 0] : 0,
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ 
+            duration: 5,
+            repeat: Infinity,
+            repeatDelay: 2,
+            ease: "easeInOut",
+            delay: index * 0.2
+          }}
+        >
+          <img
+            src={`https://openweathermap.org/img/wn/${hour.weather[0].icon}@2x.png`}
+            alt={hour.weather[0].description}
+            className="img-fluid"
+          />
+        </motion.div>
+        {/* Mostriamo la temperatura arrotondata */}
+        <motion.p 
+          className="temp mb-0"
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ 
+            delay: 0.4 + index * 0.1,
+            type: "spring",
+            stiffness: 300
+          }}
+        >
+          {Math.round(hour.main.temp)}°
+        </motion.p>
+      </div>
+      {/* Mostriamo la descrizione del meteo */}
+      <motion.p 
+        className="description small text-center mb-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 + index * 0.1 }}
+      >
+        {hour.weather[0].description}
+      </motion.p>
+    </motion.div>
+  );
+};
 
 // Componente NextDays che mostra le previsioni orarie
 // Riceve come props le coordinate geografiche (lat, lon)
@@ -80,72 +282,98 @@ function NextDays({ lat, lon }) {
   // Se stiamo caricando, mostriamo uno spinner
   if (loading) {
     return (
-      <div className="hourly-forecast d-flex justify-content-center align-items-center">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Caricamento...</span>
-        </Spinner>
-      </div>
+      <motion.div 
+        className="hourly-forecast d-flex justify-content-center align-items-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div 
+          animate={{ 
+            rotate: 360
+          }}
+          transition={{ 
+            duration: 1.5, 
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        >
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Caricamento...</span>
+          </Spinner>
+        </motion.div>
+      </motion.div>
     );
   }
 
   // Se c'è un errore, mostriamo un alert
   if (error) {
     return (
-      <div className="hourly-forecast">
+      <motion.div 
+        className="hourly-forecast"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 20
+        }}
+      >
         <Alert variant="danger">
           {error}
         </Alert>
-      </div>
+      </motion.div>
     );
   }
 
   // Se non ci sono dati, mostriamo un messaggio informativo
   if (!hourlyData || hourlyData.length === 0) {
     return (
-      <div className="hourly-forecast">
+      <motion.div 
+        className="hourly-forecast"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 20
+        }}
+      >
         <Alert variant="info">
           Nessuna previsione disponibile al momento.
         </Alert>
-      </div>
+      </motion.div>
     );
   }
 
   // Renderizziamo le previsioni orarie
   return (
-    <div className="hourly-forecast">
-      <h3 className="mb-4">Previsioni orarie</h3>
+    <motion.div 
+      className="hourly-forecast"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.h3 
+        className="mb-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 24
+        }}
+      >
+        Previsioni orarie
+      </motion.h3>
       {/* Container scrollabile per le previsioni */}
-      <div className="forecast-scroll">
-        {/* Mappiamo i dati orari per creare le card */}
+      <motion.div className="forecast-scroll">
+        {/* Utilizziamo il componente WeatherCard per ciascuna previsione */}
         {hourlyData.map((hour, index) => (
-          <div key={index} className="forecast-card d-flex flex-column justify-content-between">
-            <div className="d-flex flex-column align-items-center">
-              {/* Mostriamo l'ora */}
-              <p className="hour mb-2">
-                {new Date(hour.dt * 1000).toLocaleTimeString('it-IT', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-              </p>
-              {/* Mostriamo l'icona del meteo */}
-              <div className="weather-icon-container mb-1">
-                <img
-                  src={`https://openweathermap.org/img/wn/${hour.weather[0].icon}@2x.png`}
-                  alt={hour.weather[0].description}
-                  className="img-fluid"
-                />
-              </div>
-              {/* Mostriamo la temperatura arrotondata */}
-              <p className="temp mb-0">{Math.round(hour.main.temp)}°</p>
-            </div>
-            {/* Mostriamo la descrizione del meteo */}
-            <p className="description small text-center mb-0">
-              {hour.weather[0].description}
-            </p>
-          </div>
+          <WeatherCard key={hour.dt} hour={hour} index={index} />
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

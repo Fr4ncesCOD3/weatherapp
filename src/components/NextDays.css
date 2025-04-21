@@ -29,6 +29,8 @@
   flex: 0 0 150px;
   height: 180px;
   transition: transform 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
 .forecast-card:hover {
@@ -46,6 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .weather-icon-container img {
@@ -63,6 +66,73 @@
   font-size: 0.9rem;
   opacity: 0.9;
   text-transform: capitalize;
+}
+
+/* Animazioni nuvole */
+.cloud-animation-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.cloud {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  filter: blur(3px);
+  z-index: 1;
+}
+
+@keyframes clouds-loop {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+/* Animazioni pioggia */
+.rain-animation-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.raindrop {
+  position: absolute;
+  width: 1.5px;
+  height: 15px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8));
+  border-radius: 0 0 5px 5px;
+  z-index: 1;
+}
+
+@keyframes rain-fall {
+  0% {
+    transform: translateY(-50%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(150%);
+    opacity: 0;
+  }
 }
 
 @media (max-width: 768px) {

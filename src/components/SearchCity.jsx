@@ -1,6 +1,44 @@
 // Importiamo gli hook e i componenti necessari da React e react-bootstrap
 import { useState } from 'react';
 import { Form, ListGroup, Spinner } from 'react-bootstrap';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search } from 'react-bootstrap-icons';
+
+// Varianti per animazioni
+const containerVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.3,
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  },
+  hover: {
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    scale: 1.02,
+    transition: { duration: 0.2 }
+  },
+  tap: {
+    scale: 0.98,
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    transition: { duration: 0.1 }
+  }
+};
 
 // Componente SearchCity che permette di cercare e selezionare città
 // Riceve come prop onCitySelect per aggiornare la lista delle città
@@ -73,40 +111,94 @@ function SearchCity({ onCitySelect, setError }) {
 
   // Renderizziamo l'interfaccia di ricerca
   return (
-    <div className="search-container mb-4 position-relative">
-      {/* Campo di input per la ricerca */}
-      <Form.Control
-        type="text"
-        placeholder="Cerca una città..."
-        value={searchTerm}
-        onChange={handleSearch}
-        autoComplete="off"
-        aria-label="Cerca città"
-      />
+    <motion.div 
+      className="search-container mb-4 position-relative"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+    >
+      <div className="search-input-wrapper position-relative">
+        <Form.Control
+          type="text"
+          placeholder="Cerca una città..."
+          value={searchTerm}
+          onChange={handleSearch}
+          autoComplete="off"
+          aria-label="Cerca città"
+          className="search-input pr-4"
+        />
+        <motion.div 
+          className="search-icon position-absolute d-flex align-items-center justify-content-center" 
+          style={{ 
+            right: '15px', 
+            top: '0', 
+            bottom: '0', 
+            height: '100%',
+            pointerEvents: 'none' 
+          }}
+          initial={{ opacity: 0.5 }}
+          animate={{ 
+            opacity: loading ? 0 : 1,
+            rotate: searchTerm.length > 0 ? [0, -10, 10, -10, 0] : 0
+          }}
+          transition={{ 
+            duration: 0.5,
+            rotate: { repeat: searchTerm.length > 0 ? 0 : Infinity, repeatDelay: 5 }
+          }}
+        >
+          <Search size={18} />
+        </motion.div>
+        
+        {loading && (
+          <motion.div 
+            className="position-absolute d-flex align-items-center justify-content-center" 
+            style={{ 
+              right: '15px', 
+              top: '0', 
+              bottom: '0', 
+              height: '100%'
+            }}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+          >
+            <Spinner animation="border" size="sm" />
+          </motion.div>
+        )}
+      </div>
       
-      {loading && (
-        <div className="position-absolute top-0 end-0 me-3 mt-2">
-          <Spinner animation="border" size="sm" />
-        </div>
-      )}
-      
-      {suggestions.length > 0 && (
-        <ListGroup className="mt-2 city-suggestions">
-          {/* Mappiamo i suggerimenti per creare la lista */}
-          {suggestions.map((city, index) => (
-            <ListGroup.Item
-              key={`${city.lat}-${city.lon}-${index}`}
-              action
-              onClick={() => handleCitySelect(city)}
-              className="d-flex justify-content-between align-items-center"
-            >
-              <span>{city.name}, {city.country}</span>
-              {city.state && <small className="text-muted">{city.state}</small>}
-            </ListGroup.Item>
-          ))}
-        </ListGroup>
-      )}
-    </div>
+      <AnimatePresence>
+        {suggestions.length > 0 && (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
+          >
+            <ListGroup className="mt-2 city-suggestions">
+              {suggestions.map((city, index) => (
+                <motion.div
+                  key={`${city.lat}-${city.lon}-${index}`}
+                  variants={itemVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  layout
+                >
+                  <ListGroup.Item
+                    action
+                    onClick={() => handleCitySelect(city)}
+                    className="d-flex justify-content-between align-items-center"
+                  >
+                    <span>{city.name}, {city.country}</span>
+                    {city.state && <small className="text-muted">{city.state}</small>}
+                  </ListGroup.Item>
+                </motion.div>
+              ))}
+            </ListGroup>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

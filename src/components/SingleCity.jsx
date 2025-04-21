@@ -3,9 +3,44 @@ import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Spinner } from 'react-bootstrap';
 import { ArrowLeft } from 'react-bootstrap-icons'; 
+import { motion, AnimatePresence } from 'framer-motion';
 import NextDays from './NextDays';
 import GraphicWeather from './GraphicWeather';
 import './SingleCity.css';
+
+// Varianti per l'animazione del contenuto
+const contentVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      when: "beforeChildren",
+      staggerChildren: 0.2
+    }
+  },
+  exit: {
+    opacity: 0,
+    y: -50,
+    transition: {
+      duration: 0.3
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
 
 // Componente che mostra i dettagli di una singola città
 function SingleCity() {
@@ -51,24 +86,47 @@ function SingleCity() {
 
   if (loading) {
     return (
-      <div className="single-city-container d-flex justify-content-center align-items-center">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Caricamento...</span>
-        </Spinner>
-      </div>
+      <motion.div 
+        className="single-city-container d-flex justify-content-center align-items-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          animate={{ 
+            rotate: 360,
+            transition: { duration: 1.5, repeat: Infinity, ease: "linear" }
+          }}
+        >
+          <Spinner animation="border" role="status" style={{ width: '3rem', height: '3rem' }}>
+            <span className="visually-hidden">Caricamento...</span>
+          </Spinner>
+        </motion.div>
+      </motion.div>
     );
   }
 
   if (error || !weatherData) {
     return (
-      <div className="single-city-container">
+      <motion.div 
+        className="single-city-container"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
         <Container className="text-center py-5">
-          <h3 className="text-white">Errore: {error || 'Dati non disponibili'}</h3>
-          <Button variant="light" onClick={() => navigate('/')} className="mt-3">
-            Torna alla home
-          </Button>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <h3 className="text-white mb-4">Errore: {error || 'Dati non disponibili'}</h3>
+            <Button variant="light" onClick={() => navigate('/')} className="mt-3">
+              Torna alla home
+            </Button>
+          </motion.div>
         </Container>
-      </div>
+      </motion.div>
     );
   }
 
@@ -78,66 +136,146 @@ function SingleCity() {
       <div className="city-backdrop"></div>
       
       <Container className="position-relative py-4">
-        {/* Pulsante per tornare alla home */}
-        <Button 
-          variant="link" 
-          className="back-button"
-          onClick={() => navigate('/')} // Quando cliccato, torna alla home
+        <motion.div
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
         >
-          <ArrowLeft size={25} className="me-2" />
-          Torna alla home
-        </Button>
+          <Button 
+            variant="link" 
+            className="back-button"
+            onClick={() => navigate('/')} // Quando cliccato, torna alla home
+          >
+            <ArrowLeft size={25} className="me-2" />
+            Torna alla home
+          </Button>
+        </motion.div>
 
-        {/* Intestazione con nome città e temperature */}
-        <div className="city-header text-center">
-          <h1 className="city-name">{weatherData.name}</h1>
-          <div className="temperature-display">
-            {/* Temperatura attuale arrotondata */}
-            <h2 className="current-temp">{Math.round(weatherData.main.temp)}°</h2>
-            {/* Descrizione del tempo (es. "nuvoloso", "soleggiato") */}
-            <p className="weather-description">{weatherData.weather[0].description}</p>
-          </div>
-          {/* Range di temperatura (minima e massima) */}
-          <div className="temp-range">
-            <span>Min: {Math.round(weatherData.main.temp_min)}° </span>
-            <span className="mx-2">|</span>
-            <span>Max: {Math.round(weatherData.main.temp_max)}°</span>
-          </div>
-        </div>
+        <motion.div
+          variants={contentVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          <motion.div className="city-header text-center" variants={itemVariants}>
+            <motion.h1 
+              className="city-name"
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 300, 
+                delay: 0.2,
+                duration: 0.8
+              }}
+            >
+              {weatherData.name}
+            </motion.h1>
+            <motion.div 
+              className="temperature-display"
+              variants={itemVariants}
+            >
+              <motion.h2 
+                className="current-temp"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
+              >
+                {Math.round(weatherData.main.temp)}°
+              </motion.h2>
+              <motion.p 
+                className="weather-description"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+              >
+                {weatherData.weather[0].description}
+              </motion.p>
+            </motion.div>
+            <motion.div 
+              className="temp-range"
+              variants={itemVariants}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              <span>Min: {Math.round(weatherData.main.temp_min)}° </span>
+              <span className="mx-2">|</span>
+              <span>Max: {Math.round(weatherData.main.temp_max)}°</span>
+            </motion.div>
+          </motion.div>
 
-        {/* Griglia con dettagli meteo aggiuntivi */}
-        <div className="weather-details-grid">
-          <Row className="g-3">
-            {/* Card per l'umidità */}
-            <Col md={4} sm={6}>
-              <div className="weather-detail-card">
-                <h5>Umidità</h5>
-                <p>{weatherData.main.humidity}%</p>
-                <div className="detail-icon humidity-icon"></div>
-              </div>
-            </Col>
-            {/* Card per il vento */}
-            <Col md={4} sm={6}>
-              <div className="weather-detail-card">
-                <h5>Vento</h5>
-                <p>{weatherData.wind.speed} m/s</p>
-                <div className="detail-icon wind-icon"></div>
-              </div>
-            </Col>
-            {/* Card per la pressione */}
-            <Col md={4} sm={12}>
-              <div className="weather-detail-card">
-                <h5>Pressione</h5>
-                <p>{weatherData.main.pressure} hPa</p>
-                <div className="detail-icon pressure-icon"></div>
-              </div>
-            </Col>
-          </Row>
-        </div>
+          <motion.div 
+            className="weather-details-grid"
+            variants={itemVariants}
+          >
+            <Row className="g-3">
+              <Col md={4} sm={6}>
+                <motion.div 
+                  className="weather-detail-card"
+                  whileHover={{ y: -10, boxShadow: "0px 10px 20px rgba(0,0,0,0.2)" }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <h5>Umidità</h5>
+                  <p>{weatherData.main.humidity}%</p>
+                  <motion.div 
+                    className="detail-icon humidity-icon"
+                    animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  ></motion.div>
+                </motion.div>
+              </Col>
+              <Col md={4} sm={6}>
+                <motion.div 
+                  className="weather-detail-card"
+                  whileHover={{ y: -10, boxShadow: "0px 10px 20px rgba(0,0,0,0.2)" }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <h5>Vento</h5>
+                  <p>{weatherData.wind.speed} m/s</p>
+                  <motion.div 
+                    className="detail-icon wind-icon"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                  ></motion.div>
+                </motion.div>
+              </Col>
+              <Col md={4} sm={12}>
+                <motion.div 
+                  className="weather-detail-card"
+                  whileHover={{ y: -10, boxShadow: "0px 10px 20px rgba(0,0,0,0.2)" }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <h5>Pressione</h5>
+                  <p>{weatherData.main.pressure} hPa</p>
+                  <motion.div 
+                    className="detail-icon pressure-icon"
+                    animate={{ scale: [1, 0.9, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  ></motion.div>
+                </motion.div>
+              </Col>
+            </Row>
+          </motion.div>
 
-        {/* Componenti per previsioni future e grafico */}
-        <NextDays lat={weatherData.coord.lat} lon={weatherData.coord.lon} />
-        <GraphicWeather lat={weatherData.coord.lat} lon={weatherData.coord.lon} />
+          <motion.div
+            variants={itemVariants}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+          >
+            <NextDays lat={weatherData.coord.lat} lon={weatherData.coord.lon} />
+          </motion.div>
+          
+          <motion.div
+            variants={itemVariants}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+          >
+            <GraphicWeather lat={weatherData.coord.lat} lon={weatherData.coord.lon} />
+          </motion.div>
+        </motion.div>
       </Container>
     </div>
   );
