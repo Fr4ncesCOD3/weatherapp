@@ -1,8 +1,9 @@
-# WeatherApp
-
-# Refactoring 2.0
+# WeatherApp - Refactoring 2.0
 
 ![Weather App Preview](./public/whea.png)
+
+
+prova la demo : https://weatherapp-alpha-tan.vercel.app/
 
 ## Descrizione
 
@@ -58,7 +59,7 @@ I dati meteo vengono recuperati tramite l'API OpenWeatherMap e visualizzati in t
 
 ```bash
 # Clona il repository
-git clone <repository-url>
+git clone https://github.com/Fr4ncesCOD3/weatherapp.git
 
 # Installa le dipendenze
 npm install
